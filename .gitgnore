@@ -1,0 +1,5 @@
+.idea
+venv/
+MyApp/__pycache__/
+yyapi/__pycache__/
+__pycache__/
