@@ -10,9 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
+import datetime
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -31,15 +35,29 @@ ALLOWED_HOSTS = ['*',]
 # Application definition
 
 INSTALLED_APPS = [
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'projects.apps.ProjectsConfig',
+    'corsheaders',  # 不要放在自定义模块后面
+
+    'apps.projects',
+    'apps.debugtalks',
+    'apps.envs',
+    'apps.interfaces',
+    'apps.reports',
+    'apps.testsuites',
+    'apps.testcases',
+    'apps.users',
+    'apps.configures',
+
+
     'rest_framework', # 注册DRF
     'django_filters', # 过滤引擎
+    'drf_yasg',
 ]
 
 # 这个配置如果不配置就使用下面的配置，也可以写出来。再根据需要修改即可
@@ -59,12 +77,48 @@ REST_FRAMEWORK = {
     # 'DEFAULT_PAGINATION_CLASS':'rest_framework.pagination.PageNumberPagination',
     'DEFAULT_PAGINATION_CLASS':'utils.pagination.PageNumberPaginationManual',  #改用自定义的
     # 必须指定每页显示的数量
-    # 'PAGE_SIZE':3,
+    'PAGE_SIZE':10,
 
+     # 自动生成API接口文档配置
+    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.AutoSchema",
+
+
+    # 在DRF配置文件中开启认证和权限
+
+    # 用户登陆认证方式
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+    	'rest_framework_jwt.authentication.JSONWebTokenAuthentication', # 在DRF中配置JWT认证
+    	# 'rest_framework.authentication.SessionAuthentication', # 使用session时的认证器
+    	# 'rest_framework.authentication.BasicAuthentication' # 提交表单时的认证器
+    ],
+    # 权限配置, 顺序靠上的严格
+    'DEFAULT_PERMISSION_CLASSES': [
+    # 	'rest_framework.permissions.IsAdminUser', # 管理员可以访问
+    # 	'rest_framework.permissions.IsAuthenticated', # 全局配置只有认证用户可以访问接口
+    # 	'rest_framework.permissions.IsAuthenticatedOrReadOnly', # 认证用户可以访 问, 否则只能读取
+    	'rest_framework.permissions.AllowAny', # 所有用户都可以访问
+    ],
+
+
+
+}
+# jwt载荷中的有效期设置
+JWT_AUTH = {
+    # 1.token前缀：headers中 Authorization 值的前缀
+    'JWT_AUTH_HEADER_PREFIX': 'JWT',
+    # 2.token有效期：一天有效
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=7),
+    # 3.刷新token：允许使用旧的token换新token
+    'JWT_ALLOW_REFRESH': True,
+    # 4.token有效期：token在24小时内过期, 可续期token
+    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(hours=24),
+    # 5.自定义JWT载荷信息：自定义返回格式，需要手工创建
+    # 'JWT_RESPONSE_PAYLOAD_HANDLER': 'user.utils.jwt_response_payload_handler',
+    'JWT_RESPONSE_PAYLOAD_HANDLER': 'utils.jwt_handler.jwt_response_payload_handler',
 }
 
 
-
+# 中间件
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -73,7 +127,16 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware'
 ]
+# 添加白名单
+# 允许所有ip和端口
+CORS_ORIGIN_ALLOW_ALL = True
+# 指定自定义
+# CORS_ORIGIN_WHITELIST = []
+# 允许跨域时携带cookie  默认False
+CORS_ALLOW_CREDENTIALS  = True
 
 ROOT_URLCONF = 'Learn_Django.urls'
 
@@ -106,7 +169,16 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'dev03',
+#         'USER': 'root',
+#         'PASSWORD': '12345678',
+#         'HOST': 'localhost',
+#         'PORT': 3306
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -145,3 +217,48 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# 配置日志器，记录网站的日志信息
+LOGGING = {
+    # 版本
+    'version': 1,
+    # 是否禁用已存在的日志器
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(module)s %(lineno)d %(message)s'
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {  # 保存日志的方式
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, "logs/mylogs.log"),  # 日志文件的位置
+            'maxBytes': 100 * 1024 * 1024,  # 一个文件的大小
+            'backupCount': 10,  # 最大的文件数，超过后会轮回覆盖
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {  # 定义了一个名为django的日志器
+            'handlers': ['console', 'file'],
+            'propagate': True,
+            'level': 'INFO',  # 日志器接收的最低日志级别
+        },
+    }
+}
+
