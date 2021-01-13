@@ -2,12 +2,12 @@
 
 
 from rest_framework import routers
-from apps.interfaces.views import InterfacesViewSet
+from apps.testsuites.views import TestsuitsViewSet
 
 
 router = routers.DefaultRouter()
 
-router.register(r'interfaces', InterfacesViewSet)
+router.register(r'testsuites', TestsuitsViewSet)
 
 
 urlpatterns = [

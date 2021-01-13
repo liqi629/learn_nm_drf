@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
 import datetime
+import sys
 
 from pathlib import Path
 
@@ -18,6 +19,14 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 测试报告HTML文件所在目录
+REPORTS_DIR= os.path.join(BASE_DIR,'reports')
+# 测试yml文件所在目录
+SUITES_DIR = os.path.join(BASE_DIR,'suites')
+# print(os.path.join(BASE_DIR,'apps'))
+#要将apps的路径设定为项目的根目录，即引用apps下面的app不需要添加  apps.appName ，直接引用  appName即可
+sys.path.insert(0,os.path.join(BASE_DIR,'apps'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -30,6 +39,7 @@ SECRET_KEY = 'n868udwh=fq)pq#b3#@4pf3-e$j6l%smcl&f#i-mm=y_d4i5z0'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*',]
+
 
 
 # Application definition
@@ -53,6 +63,7 @@ INSTALLED_APPS = [
     'apps.testcases',
     'apps.users',
     'apps.configures',
+    'apps.summary',
 
 
     'rest_framework', # 注册DRF
@@ -89,7 +100,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
     	'rest_framework_jwt.authentication.JSONWebTokenAuthentication', # 在DRF中配置JWT认证
     	# 'rest_framework.authentication.SessionAuthentication', # 使用session时的认证器
-    	# 'rest_framework.authentication.BasicAuthentication' # 提交表单时的认证器
+    	'rest_framework.authentication.BasicAuthentication' # 提交表单时的认证器
     ],
     # 权限配置, 顺序靠上的严格
     'DEFAULT_PERMISSION_CLASSES': [
@@ -163,22 +174,22 @@ WSGI_APPLICATION = 'Learn_Django.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'dev03',
-#         'USER': 'root',
-#         'PASSWORD': '12345678',
-#         'HOST': 'localhost',
-#         'PORT': 3306
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'django_1',
+        'USER': 'root',
+        'PASSWORD': 'root',
+        'HOST': 'localhost',
+        'PORT': 3306
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators

@@ -1,13 +1,24 @@
+import os
+from datetime import datetime
+
+from Learn_Django import settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
+from rest_framework import status
 from rest_framework.exceptions import NotFound
 
 from apps.projects import serializers
 from .models import Projects
 from .utils import get_count_by_project
 from apps.interfaces.models import Interfaces
+from apps.testcases.models import Testcases
+from apps.envs.models import Envs
+from utils import common
+from .serializers import ProjectsRunSerializer
+
 
 class ProjectsViewSet(ModelViewSet):
     """
@@ -47,7 +58,8 @@ class ProjectsViewSet(ModelViewSet):
     @action(methods=['get'],detail=False,)
     def names(self,request,*args,**kwargs):
         queryset = self.get_queryset()
-        serializer = serializers.ProjectNameSerializer(instance=queryset,many=True)
+        # serializer = serializers.ProjectNameSerializer(instance=queryset,many=True)
+        serializer = self.get_serializer(instance=queryset,many=True)
         return Response(serializer.data)
 
 
@@ -77,3 +89,42 @@ class ProjectsViewSet(ModelViewSet):
         datas = serializer.data
         # datas = get_count_by_project(datas)
         return self.get_paginated_response(datas)
+
+    @action(methods=['post'], detail=True)
+    def run(self, request, pk=None):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datas = serializer.validated_data
+
+        env_id = datas.get('env_id')
+        # 指定测试文件存放目录 suites+时间
+        testcase_dir_path = os.path.join(settings.SUITES_DIR, datetime.strftime(datetime.now(), '%Y%m%d%H%M%S%f'))
+        # 创建文件夹
+        if not os.path.exists(testcase_dir_path):
+            os.mkdir(testcase_dir_path)
+        # 获取环境
+        env = Envs.objects.filter(id=env_id, is_delete=False).first()
+        interface_objs = Interfaces.objects.filter(is_delete=False,project=instance)
+        if not interface_objs.exists(): #如果项目下没有接口则无法运行
+            data_dict = {
+                "detail":"此项目下无接口，无法运行！"
+            }
+            return Response(data_dict,status=status.HTTP_400_BAD_REQUEST)
+        for inter_obj in interface_objs:
+            testcase_objs = Testcases.objects.filter(is_delete=False,interface=inter_obj)
+
+            for one_obj in testcase_objs:
+
+                # 生成yaml用例文件
+                common.generate_testcase_files(one_obj, env, testcase_dir_path)
+        # 运行用例
+        return common.run_testcase(instance, testcase_dir_path)
+
+    def get_serializer_class(self):
+        if self.action=='names':
+            return serializers.ProjectNameSerializer
+        elif self.action =='run':
+            return serializers.ProjectsRunSerializer
+        else:
+            return self.serializer_class

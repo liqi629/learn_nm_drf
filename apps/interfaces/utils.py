@@ -1,7 +1,8 @@
-
+import re
 
 from apps.testcases.models import Testcases
 from apps.configures.models import Configures
+
 
 def get_count_by_project(datas):
 
@@ -9,7 +10,8 @@ def get_count_by_project(datas):
     datas_list = []
     for item in datas:
 
-
+        mtch = re.search(r'(.*)T(.*)\..*?',item['create_time'])
+        item['create_time'] = mtch.group(1) +' '+mtch.group(2)
         interface_id = item['id']
 
 

@@ -2,12 +2,12 @@
 
 
 from rest_framework import routers
-from apps.interfaces.views import InterfacesViewSet
+from apps.configures.views import ConfiguresViewSet
 
 
 router = routers.DefaultRouter()
 
-router.register(r'interfaces', InterfacesViewSet)
+router.register(r'configures', ConfiguresViewSet)
 
 
 urlpatterns = [

@@ -20,11 +20,14 @@ from django.urls import include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('apps.projects.urls')),
-    path('user/', include('apps.users.urls')),
+    path('', include('apps.users.urls')),
     path('', include('apps.interfaces.urls')),
-
-
-    # path('api/', include('rest_framework.urls')),
-
+    path('', include('apps.envs.urls')),
+    path('', include('apps.debugtalks.urls')),
+    path('', include('apps.testsuites.urls')),
+    path('', include('apps.reports.urls')),
+    path('', include('apps.configures.urls')),
+    path('', include('apps.testcases.urls')),
+    path('', include('apps.summary.urls')),
 
 ]
